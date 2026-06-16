@@ -15,7 +15,7 @@ class Args:
 
         parser.add_argument('--bert_dir', default='../model_hub/bert-base-chinese/',
                             help='bert dir for uer')
-        parser.add_argument('--data_dir', default='./data/cner/',
+        parser.add_argument('--data_dir', default='./data/CMeEE/',
                             help='data dir for uer')
         parser.add_argument('--log_dir', default='./logs/',
                             help='log dir for uer')

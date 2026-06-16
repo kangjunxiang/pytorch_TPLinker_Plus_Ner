@@ -1,0 +1,17 @@
+# Logs
+*.log
+logs/
+
+# Development tools
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd

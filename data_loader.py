@@ -84,13 +84,13 @@ if __name__ == "__main__":
   from transformers import BertTokenizer
   max_len = 150
   tokenizer = BertTokenizer.from_pretrained('model_hub/chinese-bert-wwm-ext/vocab.txt')
-  train_dataset, _ = MyDataset(file_path='data/cner/mid_data/train.json', 
+  train_dataset, _ = MyDataset(file_path='data/CMeEE/mid_data/train.json', 
               tokenizer=tokenizer, 
               max_len=max_len)
   print(train_dataset[0])
   map_ij2k = {(i, j): trans_ij2k(max_len, i, j) for i in range(max_len) for j in range(max_len) if j >= i}
   map_k2ij = {v: k for k, v in map_ij2k.items()}
-  with open('data/cner/mid_data/labels.json') as fp:
+  with open('data/CMeEE/mid_data/labels.json') as fp:
     labels = json.load(fp)
   id2tag = {}
   tag2id = {}
