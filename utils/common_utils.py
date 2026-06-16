@@ -11,14 +11,14 @@ from torch.nn.utils.rnn import pad_sequence
 
 
 def trans_ij2k(seq_len, i, j):
-    '''把第i行，第j列转化成上三角flat后的序号
+    '''Convert row i, column j to its index in the flattened upper-triangular matrix
     '''
     if (i > seq_len - 1) or (j > seq_len - 1) or (i > j):
         return 0
     return int(0.5*(2*seq_len-i+1)*i+(j-i))
 
 def sequence_padding(inputs, length=None, value=0, seq_dims=1, mode='post'):
-    """将序列padding到同一长度
+    """Pad sequences to the same length
     """
     if isinstance(inputs[0], (np.ndarray, list)):
         if length is None:
@@ -56,7 +56,7 @@ def sequence_padding(inputs, length=None, value=0, seq_dims=1, mode='post'):
 
 def timer(func):
     """
-    函数计时器
+    Function timer decorator
     :param func:
     :return:
     """
@@ -66,7 +66,7 @@ def timer(func):
         start = time.time()
         res = func(*args, **kwargs)
         end = time.time()
-        print("{}共耗时约{:.4f}秒".format(func.__name__, end - start))
+        print("{} took approximately {:.4f} seconds".format(func.__name__, end - start))
         return res
 
     return wrapper
@@ -74,7 +74,7 @@ def timer(func):
 
 def set_seed(seed=123):
     """
-    设置随机数种子，保证实验可重现
+    Set random seed to ensure reproducible experiments
     :param seed:
     :return:
     """
@@ -86,14 +86,14 @@ def set_seed(seed=123):
 
 def set_logger(log_path):
     """
-    配置log
+    Configure logging
     :param log_path:s
     :return:
     """
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
 
-    # 由于每调用一次set_logger函数，就会创建一个handler，会造成重复打印的问题，因此需要判断root logger中是否已有该handler
+    # Each call to set_logger creates a handler, which causes duplicate printing. Therefore, we need to check whether the handler is already present in the root logger.
     if not any(handler.__class__ == logging.FileHandler for handler in logger.handlers):
         file_handler = logging.FileHandler(log_path)
         formatter = logging.Formatter(
@@ -108,26 +108,26 @@ def set_logger(log_path):
 
 
 def save_json(data_dir, data, desc):
-    """保存数据为json"""
+    """Save data as json."""
     with open(os.path.join(data_dir, '{}.json'.format(desc)), 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 
 def read_json(data_dir, desc):
-    """读取数据为json"""
+    """Load data from json."""
     with open(os.path.join(data_dir, '{}.json'.format(desc)), 'r', encoding='utf-8') as f:
         data = json.load(f)
     return data
 
 
 def save_pkl(data_dir, data, desc):
-    """保存.pkl文件"""
+    """Save a .pkl file."""
     with open(os.path.join(data_dir, '{}.pkl'.format(desc)), 'wb') as f:
         pickle.dump(data, f)
 
 
 def read_pkl(data_dir, desc):
-    """读取.pkl文件"""
+    """Load a .pkl file."""
     with open(os.path.join(data_dir, '{}.pkl'.format(desc)), 'rb') as f:
         data = pickle.load(f)
     return data
@@ -135,8 +135,8 @@ def read_pkl(data_dir, desc):
 
 def fine_grade_tokenize(raw_text, tokenizer):
     """
-    序列标注任务 BERT 分词器可能会导致标注偏移，
-    用 char-level 来 tokenize
+    For sequence labeling, the BERT tokenizer may cause label offset, 
+    use char-level tokenization.
     """
     tokens = []
 

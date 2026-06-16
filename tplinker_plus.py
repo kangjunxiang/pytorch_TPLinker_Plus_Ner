@@ -3,11 +3,11 @@ import torch.nn as nn
 from transformers import BertModel
 
 class MultilabelCategoricalCrossentropy(nn.Module):
-    """多标签分类的交叉熵
-    说明：y_true和y_pred的shape一致，y_true的元素非0即1， 1表示对应的类为目标类，0表示对应的类为非目标类。
-    警告：请保证y_pred的值域是全体实数，换言之一般情况下y_pred不用加激活函数，尤其是不能加sigmoid或者softmax！预测
-         阶段则输出y_pred大于0的类。如有疑问，请仔细阅读并理解本文。
-    参考：https://kexue.fm/archives/7359
+    """Cross-entropy loss for multi-label classification
+    Note: y_true and y_pred have the same shape; elements of y_true are either 0 or 1, 1 means the corresponding class is a target class, 0 means it is a non-target class.
+    Warning: ensure that the value range of y_pred is all real numbers. In general, no activation function should be added to y_pred, especially not sigmoid or softmax! Predict
+         at the inference stage, output the classes whose y_pred is greater than 0. If you have any questions, please read and understand this article carefully.
+    Reference: https://kexue.fm/archives/7359
     """
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -27,15 +27,15 @@ class MultilabelCategoricalCrossentropy(nn.Module):
 
 class LayerNorm(nn.Module):
     def __init__(self, hidden_size, eps=1e-12, conditional_size=False, weight=True, bias=True, norm_mode='normal', **kwargs):
-        """layernorm 层，这里自行实现，目的是为了兼容 conditianal layernorm，使得可以做条件文本生成、条件分类等任务
-           条件layernorm来自于苏剑林的想法，详情：https://spaces.ac.cn/archives/7124
+        """LayerNorm layer, implemented here for compatibility with conditional LayerNorm, enabling tasks such as conditional text generation and conditional classification.
+           The idea of conditional LayerNorm comes from Su Jianlin. For details, see: https://spaces.ac.cn/archives/7124
         """
         super(LayerNorm, self).__init__()
         
-        # 兼容roformer_v2不包含weight
+        # Compatibility: roformer_v2 does not include weight
         if weight:
             self.weight = nn.Parameter(torch.ones(hidden_size))
-        # 兼容t5不包含bias项, 和t5使用的RMSnorm
+        # Compatibility: t5 does not include the bias term; this also handles t5's RMSnorm
         if bias:
             self.bias = nn.Parameter(torch.zeros(hidden_size))
         self.norm_mode = norm_mode
@@ -43,22 +43,22 @@ class LayerNorm(nn.Module):
         self.eps = eps
         self.conditional_size = conditional_size
         if conditional_size:
-            # 条件layernorm, 用于条件文本生成,
-            # 这里采用全零初始化, 目的是在初始状态不干扰原来的预训练权重
+            # Conditional LayerNorm, used for conditional text generation,
+            # All-zero initialization is used here, so the original pretrained weights are not disturbed in the initial state.
             self.dense1 = nn.Linear(conditional_size, hidden_size, bias=False)
             self.dense1.weight.data.uniform_(0, 0)
             self.dense2 = nn.Linear(conditional_size, hidden_size, bias=False)
             self.dense2.weight.data.uniform_(0, 0)
 
     def forward(self, x):
-        inputs = x[0]  # 这里是visible_hiddens
+        inputs = x[0]  # visible_hiddens
 
         if self.norm_mode == 'rmsnorm':
-            # t5使用的是RMSnorm
+            # t5 uses RMSnorm
             variance = inputs.to(torch.float32).pow(2).mean(-1, keepdim=True)
             o = inputs * torch.rsqrt(variance + self.eps)
         else:
-            # 归一化是针对于inputs
+            # Normalization is applied to inputs
             u = inputs.mean(-1, keepdim=True)
             s = (inputs - u).pow(2).mean(-1, keepdim=True)
             o = (inputs - u) / torch.sqrt(s + self.eps)
@@ -69,8 +69,8 @@ class LayerNorm(nn.Module):
             self.bias = 0
 
         if self.conditional_size:
-            cond = x[1]  # 这里是repeat_hiddens
-            # 三者的形状都是一致的
+            cond = x[1]  # repeat_hiddens
+            # All three have the same shape
             # print(inputs.shape, cond.shape, o.shape)
             for _ in range(len(inputs.shape) - len(cond.shape)):
                 cond = cond.unsqueeze(dim=1)
@@ -80,7 +80,7 @@ class LayerNorm(nn.Module):
             return self.weight * o + self.bias
 
 class TplinkerHandshakingKernel(nn.Module):
-    '''Tplinker的HandshakingKernel实现
+    '''Implementation of Tplinker's HandshakingKernel
     '''
     def __init__(self, hidden_size, shaking_type, inner_enc_type=''):
         super().__init__()
@@ -101,7 +101,7 @@ class TplinkerHandshakingKernel(nn.Module):
         elif inner_enc_type == "lstm":
             self.inner_context_lstm = nn.LSTM(hidden_size, hidden_size, num_layers=1, bidirectional=False, batch_first=True)
         
-        # 自行实现的用torch.gather方式来做，避免循环，目前只实现了cat方式
+        # Custom implementation using torch.gather to avoid loops; currently only the cat approach is implemented
         # tag_ids = [(i, j) for i in range(maxlen) for j in range(maxlen) if j >= i]
         # gather_idx = torch.tensor(tag_ids, dtype=torch.long).flatten()[None, :, None]
         # self.register_buffer('gather_idx', gather_idx)

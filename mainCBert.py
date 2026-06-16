@@ -39,7 +39,7 @@ class BertForNer:
         # Train
         global_step = 0
         self.model.zero_grad()
-        eval_steps = self.args.eval_steps #每多少个step打印损失及进行验证
+        eval_steps = self.args.eval_steps # Print loss and run validation every eval_steps
         best_f1 = 0.0
         for epoch in range(self.args.train_epochs):
             for step, batch_data in enumerate(self.train_loader):
@@ -129,7 +129,7 @@ class BertForNer:
             tot_dev_loss = 0.0
             total_count = [0 for _ in range(len(id2tag))]
             for eval_step, dev_batch_data in enumerate(self.dev_loader):
-                # 将每个张量转移到设备，修正原代码中的错误
+                # Move each tensor to the device, fix the bug in the original code
                 dev_batch_data = [tensor.to(device) for tensor in dev_batch_data]
                 labels = dev_batch_data[3]
 
@@ -144,14 +144,14 @@ class BertForNer:
                     tokens = dev_callbak[i]
                     for j in range(self.args.num_tags):
                         logit_ = logit[:, j]
-                        ids = np.where(logit_.cpu().numpy() > 0)[0].tolist()  # 修正np.where的使用
+                        ids = np.where(logit_.cpu().numpy() > 0)[0].tolist()  # Fix the usage of np.where
                         for d in ids:
                             start, end = map_k2ij[d]
                             pred_tmp[id2tag[j]].append(["".join(tokens[start:end + 1]), start])
                     pred_entities.append(pred_tmp)
 
-                # 处理真实实体，修正标签维度顺序
-                labels = labels.cpu().numpy()  # 确保标签在CPU上处理
+                # Process ground-truth entities, fix the label dimension order
+                labels = labels.cpu().numpy()  # Ensure labels are processed on CPU
                 for i in range(batch_size):
                     true_tmp = defaultdict(list)
                     logit = labels[i]  # shape: (seq_len, num_tags)
@@ -238,7 +238,7 @@ class BertForNer:
                 role_metric += tmp_metric
             test_end_time = time.time()
             test_duration = test_end_time - test_start_time
-            logger.info(f"[test] 测试耗时: {test_duration:.2f} 秒")
+            logger.info(f"[test] Test duration: {test_duration:.2f} seconds")
             logger.info(classification_report(role_metric, label_list, id2tag, total_count))
 
     def predict(self, raw_text, model_path):
@@ -291,56 +291,56 @@ class BertForNer:
                 batch_size = logits.size(0)
                 test_callback = self.test_callback[eval_step * batch_size:(eval_step + 1) * batch_size]
 
-                # 处理预测实体
+                # Process predicted entities
                 for i in range(batch_size):
                     pred_tmp = defaultdict(list)
 
                     logit = logits[i]  # shape: (seq_len, num_tags)
                     tokens = test_callback[i]
-                    full_text = "".join(tokens)  # 获取全文
+                    full_text = "".join(tokens)  # Get the full text
                     result_tmp = {
                         'full_text': BertForNer.remove_cls_sep(full_text),
                         'entities': defaultdict(list)
                     }
                     for j in range(self.args.num_tags):
-                        logit_ = logit[:, j]  # 确保logit_是一维
-                        ids = np.where(logit_.cpu().numpy() > 0)[0].tolist()  # 修正np.where的使用
-                        sample_id = eval_step * batch_size + i  # 当前样本的全局ID
+                        logit_ = logit[:, j]  # Ensure logit_ is 1-D
+                        ids = np.where(logit_.cpu().numpy() > 0)[0].tolist()  # Fix the usage of np.where
+                        sample_id = eval_step * batch_size + i  # Global ID of the current sample
                         for d in ids:
                             start, end = map_k2ij[d]
-                            # confidence = float(logit_[d])  # 确保转换为Python浮点数
-                            confidence = round(float(logit_[d]), 4)  # 保留四位小数
+                            # confidence = float(logit_[d])  # Ensure conversion to a Python float
+                            confidence = round(float(logit_[d]), 4)  # Keep 4 decimal places
                             # pred_tmp[id2tag[j]].append(["".join(tokens[start:end + 1]), start])
-                            # 关键修改2：正确构造三元组
+                            # Key modification 2: correctly construct the triple
                             entity_info = [
                                 "".join(tokens[start:end + 1]),
                                 int(start),
-                                round(confidence, 4)  # 保留四位小数
+                                round(confidence, 4)  # Keep 4 decimal places
                             ]
 
                             entity_text = "".join(tokens[start:end + 1])
                             result_info = [entity_text, int(start), int(end), confidence]
                             pred_tmp[id2tag[j]].append(entity_info)
-                            # 关键修复：按标签分类存储实体
-                            tag = id2tag[j]  # 获取当前实体类型
-                            result_tmp['entities'][tag].append(result_info)  # 正确添加到标签对应的列表
+                            # Key fix: store entities by their tag
+                            tag = id2tag[j]  # Get the current entity type
+                            result_tmp['entities'][tag].append(result_info)  # Correctly append to the list of the corresponding tag
                     pred_entities.append(pred_tmp)
                     result_entities.append(result_tmp)
-                # 处理真实实体，修正标签维度顺序
-                labels = labels.cpu().numpy()  # 确保标签在CPU上处理
+                # Process ground-truth entities, fix the label dimension order
+                labels = labels.cpu().numpy()  # Ensure labels are processed on CPU
                 for i in range(batch_size):
                     true_tmp = defaultdict(list)
                     logit = labels[i]  # shape: (seq_len, num_tags)
                     tokens = test_callback[i]
                     for j in range(self.args.num_tags):
-                        logit_ = logit[:, j]  # 确保处理正确的维度
+                        logit_ = logit[:, j]  # Ensure the correct dimension is processed
                         ids = np.where(logit_ == 1)[0].tolist()
                         for d in ids:
                             start, end = map_k2ij[d]
                             true_tmp[id2tag[j]].append(["".join(tokens[start:end + 1]), start])
                     true_entities.append(true_tmp)
 
-            # 统计计算部分保持不变
+            # The statistics and computation part remains unchanged
             total_count = [0 for _ in range(len(id2tag))]
             role_metric = np.zeros([len(id2tag), 3])
             confidence_sum = [0.0 for _ in range(len(id2tag))]
@@ -352,22 +352,22 @@ class BertForNer:
                         pred[_type] = []
                     total_count[idx] += len(true[_type])
                     tmp_metric[idx] += calculate_metric(true[_type], pred[_type])
-                    clean_pred = [[info[0], info[1]] for info in pred[_type]]  # 剥离置信度
-                    # 收集置信度信息
-                    # 单独统计置信度
+                    clean_pred = [[info[0], info[1]] for info in pred[_type]]  # Strip the confidence
+                    # Collect confidence information
+                    # Separately accumulate confidence
                     for entity_info in pred[_type]:
-                        confidence = entity_info[2]  # 直接取第三个元素
+                        confidence = entity_info[2]  # Directly take the third element
                         confidence_sum[idx] += confidence
                         confidence_count[idx] += 1
                 role_metric += tmp_metric
             test_end_time = time.time()
             test_duration = test_end_time - test_start_time
-            logger.info(f"[testNew] 测试耗时: {test_duration:.2f} 秒")
-            logger.info('[test] 测试集分类报告:')
+            logger.info(f"[testNew] Test duration: {test_duration:.2f} seconds")
+            logger.info('[test] Test set classification report:')
             logger.info(
                 classification_report(role_metric, label_list, id2tag, total_count, confidence_sum, confidence_count))
 
-            # 合并相同full_text的实体信息（结构保持不变）
+            # Merge entity information for the same full_text (structure unchanged)
             combined_entities = {}
             for item in result_entities:
                 full_text = item['full_text']
@@ -376,11 +376,11 @@ class BertForNer:
                 for tag, entities in item['entities'].items():
                     combined_entities[full_text][tag].extend(entities)
 
-            # 将字典转换为列表，每条数据独立成行
+            # Convert the dictionary to a list, one entry per line
             combined_list = [
                 {
                     "full_text": full_text,
-                    "entities": dict(entities)  # 将defaultdict转为普通dict
+                    "entities": dict(entities)  # Convert defaultdict to plain dict
                 }
                 for full_text, entities in combined_entities.items()
             ]
@@ -390,9 +390,9 @@ class BertForNer:
             output_file = f'./json/{model_name}_{current_date}.json'
             with open(output_file, 'w', encoding='utf-8') as f:
                 for entry in combined_list:
-                    # 将每个条目转为JSON字符串并写入一行
+                    # Convert each entry to a JSON string and write on a separate line
                     json_line = json.dumps(entry, ensure_ascii=False)
-                    f.write(json_line + '\n')  # 添加换行符
+                    f.write(json_line + '\n')  # Append a newline
 
     def remove_cls_sep(text):
         if text.startswith('[CLS]'):
@@ -447,7 +447,7 @@ if __name__ == '__main__':
         print(test_dataset[0])
         test_loader = DataLoader(test_dataset, batch_size=args.eval_batch_size, shuffle=False, collate_fn=collate.collate_fn)
 
-        logger.info(f"测试集样本数: {len(test_dataset)}")
+        logger.info(f"Test set sample count: {len(test_dataset)}")
 
         bertForNer = BertForNer(args, None, dev_loader, test_loader, id2tag, model, device, test_callback)
         # bertForNer.train()

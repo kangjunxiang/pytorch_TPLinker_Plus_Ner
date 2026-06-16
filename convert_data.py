@@ -36,11 +36,11 @@ train_labels = convert_format('data/CMeEE/mid_data/CMeEE-train.json', 'data/CMeE
 dev_labels = convert_format('data/CMeEE/mid_data/CMeEE-dev.json', 'data/CMeEE/mid_data/dev.json')
 
 all_labels = list(train_labels.union(dev_labels))
-print(f"实体类型: {all_labels}")
-print(f"类型数量: {len(all_labels)}")
+print(f"Entity types: {all_labels}")
+print(f"Number of types: {len(all_labels)}")
 
 #with open('data/CMeEE/mid_data/labels.json', 'w', encoding='utf-8') as f:
 #    json.dump(all_labels, f, ensure_ascii=False)
 
 
-print("数据转换完成！")
+print("Data conversion completed!")

@@ -26,7 +26,7 @@ class ListDataset(Dataset):
 
 
 
-# 加载数据集
+# Load dataset
 class MyDataset(ListDataset):
     @staticmethod
     def load_data(filename, tokenizer, max_len):
@@ -45,9 +45,9 @@ class MyDataset(ListDataset):
               all_tokens.append(tokens)
               token_ids = tokenizer.convert_tokens_to_ids(tokens)
               label = []
-              for lab in labels:  # 这里需要加上CLS的位置
+              for lab in labels:  # Need to add the CLS position here
                 label.append([1 + lab[2], 1 + lab[3]-1, lab[1]])
-              data.append((token_ids, label))  # label为[[start, end, entity], ...]
+              data.append((token_ids, label))  # label is [[start, end, entity], ...]
         return data, all_tokens
 
 class Collate:
@@ -66,11 +66,11 @@ class Collate:
       batch_attention_mask = []
       batch_token_type_ids = []
       for i, (token_ids, labels) in enumerate(batch):
-          batch_token_ids.append(token_ids)  # 前面已经限制了长度
+          batch_token_ids.append(token_ids)  # Length has been limited above
           batch_attention_mask.append([1] * len(token_ids))
           batch_token_type_ids.append([0] * len(token_ids))
           for s_i in labels:
-              if s_i[1] >= len(token_ids) - 1:  # 实体的结尾超过文本长度，则不标记，末尾还有SEP
+              if s_i[1] >= len(token_ids) - 1:  # The end of the entity exceeds the text length, skip it; there is a SEP at the end
                   continue
               batch_labels[i, self.map_ij2k[s_i[0], s_i[1]], self.tag2id[s_i[2]]] = 1
       batch_token_ids = torch.tensor(sequence_padding(batch_token_ids, length=self.maxlen), dtype=torch.long, device=self.device)

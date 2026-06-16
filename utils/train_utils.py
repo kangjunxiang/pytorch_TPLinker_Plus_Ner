@@ -12,7 +12,7 @@ def build_optimizer_and_scheduler(args, model, t_total):
         model.module if hasattr(model, "module") else model
     )
 
-    # 差分学习率
+    # Discriminative (differential) learning rate
     no_decay = ["bias", "LayerNorm.weight"]
     model_param = list(module.named_parameters())
 
@@ -37,7 +37,7 @@ def build_optimizer_and_scheduler(args, model, t_total):
         {"params": [p for n, p in bert_param_optimizer if any(nd in n for nd in no_decay)],
          "weight_decay": 0.0, 'lr': args.lr},
 
-        # 其他模块，差分学习率
+        # Other modules, discriminative learning rate
         {"params": [p for n, p in other_param_optimizer if not any(nd in n for nd in no_decay)],
          "weight_decay": args.weight_decay, 'lr': args.other_lr},
         {"params": [p for n, p in other_param_optimizer if any(nd in n for nd in no_decay)],
@@ -52,7 +52,7 @@ def build_optimizer_and_scheduler(args, model, t_total):
     return optimizer, scheduler
 
 def save_model(args, model, model_name, global_step):
-    """保存最好的验证集效果最好那个模型"""
+    """Save the model with the best validation performance."""
     output_dir = os.path.join(args.output_dir, '{}'.format(model_name, global_step))
     if not os.path.exists(output_dir):
         os.makedirs(output_dir, exist_ok=True)
@@ -65,7 +65,7 @@ def save_model(args, model, model_name, global_step):
     torch.save(model_to_save.state_dict(), os.path.join(output_dir, 'model.pt'))
 
 def save_model_step(args, model, global_step):
-    """根据global_step来保存模型"""
+    """Save the model based on global_step."""
     output_dir = os.path.join(args.output_dir, 'checkpoint-{}'.format(global_step))
     if not os.path.exists(output_dir):
         os.makedirs(output_dir, exist_ok=True)
@@ -79,7 +79,7 @@ def save_model_step(args, model, global_step):
 
 def load_model_and_parallel(model, gpu_ids, ckpt_path=None, strict=True):
     """
-    加载模型 & 放置到 GPU 中（单卡 / 多卡）
+    Load the model and place it on the GPU (single / multi-GPU)
     """
     gpu_ids = gpu_ids.split(',')
 

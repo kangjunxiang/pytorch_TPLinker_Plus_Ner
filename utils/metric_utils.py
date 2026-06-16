@@ -10,7 +10,7 @@ import numpy as np
 
 def calculate_metric(gt, predict):
     """
-    计算 tp fp fn
+    Compute tp fp fn
     """
     tp, fp, fn = 0, 0, 0
     for entity_predict in predict:

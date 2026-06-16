@@ -5,11 +5,11 @@ def cut_sentences_v1(sent):
     """
     the first rank of sentence cut
     """
-    sent = re.sub('([。！？\?])([^”’])', r"\1\n\2", sent)  # 单字符断句符
-    sent = re.sub('(\.{6})([^”’])', r"\1\n\2", sent)  # 英文省略号
-    sent = re.sub('(\…{2})([^”’])', r"\1\n\2", sent)  # 中文省略号
+    sent = re.sub('([。！？\?])([^”’])', r"\1\n\2", sent)  # Single-character sentence terminators
+    sent = re.sub('(\.{6})([^”’])', r"\1\n\2", sent)  # English ellipsis
+    sent = re.sub('(\…{2})([^”’])', r"\1\n\2", sent)  # Chinese ellipsis
     sent = re.sub('([。！？\?][”’])([^，。！？\?])', r"\1\n\2", sent)
-    # 如果双引号前有终止符，那么双引号才是句子的终点，把分句符\n放到双引号后
+    # If a sentence terminator precedes a double quote, the double quote is the sentence boundary; place the newline after the double quote
     return sent.split("\n")
 
 
@@ -22,10 +22,10 @@ def cut_sentences_v2(sent):
 
 
 def cut_sent_for_bert(text, max_seq_len):
-    # 将句子分句，细粒度分句后再重新合并
+    # Split the sentence into sub-sentences at fine granularity, then recombine
     sentences = []
 
-    # 细粒度划分
+    # Fine-grained split
     sentences_v1 = cut_sentences_v1(text)
     # print("sentences_v1=", sentences_v1)
     for sent_v1 in sentences_v1:
@@ -37,7 +37,7 @@ def cut_sent_for_bert(text, max_seq_len):
 
     assert ''.join(sentences) == text
 
-    # 合并
+    # Recombine
     merged_sentences = []
     start_index_ = 0
 
@@ -45,7 +45,7 @@ def cut_sent_for_bert(text, max_seq_len):
         tmp_text = sentences[start_index_]
 
         end_index_ = start_index_ + 1
-        # 针对于bert模型，注意这里最大长度要减去2
+        # For the BERT model, note that the maximum length here needs to be reduced by 2
         while end_index_ < len(sentences) and \
                 len(tmp_text) + len(sentences[end_index_]) <= max_seq_len - 2:
             tmp_text += sentences[end_index_]
@@ -60,15 +60,15 @@ def cut_sent_for_bert(text, max_seq_len):
 
 def refactor_labels(sent, labels, start_index):
     """
-    分句后需要重构 labels 的 offset
-    :param sent: 切分并重新合并后的句子
-    :param labels: 原始文档级的 labels
-    :param start_index: 该句子在文档中的起始 offset
+    After splitting, the offset of labels needs to be reconstructed
+    :param sent: the sentence after splitting and recombining
+    :param labels: the document-level labels
+    :param start_index: the starting offset of the sentence in the document
     :return (type, entity, offset)
     """
     new_labels = []
     end_index = start_index + len(sent)
-    # _label： TI, 实体类别， 实体起始位置， 实体结束位置， 实体名）
+    # _label: TI, entity type, entity start position, entity end position, entity name
     for _label in labels:
         if start_index <= _label[2] <= _label[3] <= end_index:
             new_offset = _label[2] - start_index
@@ -76,7 +76,7 @@ def refactor_labels(sent, labels, start_index):
             assert sent[new_offset: new_offset + len(_label[-1])] == _label[-1]
 
             new_labels.append((_label[1], _label[-1], new_offset))
-        # label 被截断的情况
+        # The case where the label is truncated
         elif _label[2] < end_index < _label[3]:
             raise RuntimeError(f'{sent}, {_label}')
 

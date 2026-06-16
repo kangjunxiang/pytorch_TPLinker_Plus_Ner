@@ -42,10 +42,10 @@ class Args:
 
         # 2e-5
         parser.add_argument('--lr', default=3e-5, type=float,
-                            help='bert学习率')
+                            help='Learning rate for BERT')
         # 2e-3
         parser.add_argument('--other_lr', default=3e-4, type=float,
-                            help='bilstm和多层感知机学习率')
+                            help='Learning rate for BiLSTM and MLP')
         # 0.5
         parser.add_argument('--max_grad_norm', default=1, type=float,
                             help='max grad clip')
@@ -58,7 +58,8 @@ class Args:
 
         parser.add_argument('--train_batch_size', default=32, type=int)
 
-
+        parser.add_argument('--eval_steps', default=100, type=int,
+                            help='evaluate every N steps during training')
 
         return parser
 

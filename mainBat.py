@@ -36,7 +36,7 @@ class BertForNer:
         # Train
         global_step = 0
         self.model.zero_grad()
-        eval_steps = 100 #每多少个step打印损失及进行验证
+        eval_steps = 100 # Print loss and run validation every 100 steps
         best_f1 = 0.0
         for epoch in range(self.args.train_epochs):
             for step, batch_data in enumerate(self.train_loader):
@@ -126,7 +126,7 @@ class BertForNer:
             tot_dev_loss = 0.0
             total_count = [0 for _ in range(len(id2tag))]
             for eval_step, dev_batch_data in enumerate(self.dev_loader):
-                # 将每个张量转移到设备，修正原代码中的错误
+                # Move each tensor to the device, fix the bug in the original code
                 dev_batch_data = [tensor.to(device) for tensor in dev_batch_data]
                 labels = dev_batch_data[3]
 
@@ -141,14 +141,14 @@ class BertForNer:
                     tokens = dev_callbak[i]
                     for j in range(self.args.num_tags):
                         logit_ = logit[:, j]
-                        ids = np.where(logit_.cpu().numpy() > 0.5)[0].tolist()  # 修正np.where的使用
+                        ids = np.where(logit_.cpu().numpy() > 0.5)[0].tolist()  # Fix the usage of np.where
                         for d in ids:
                             start, end = map_k2ij[d]
                             pred_tmp[id2tag[j]].append(["".join(tokens[start:end + 1]), start])
                     pred_entities.append(pred_tmp)
 
-                # 处理真实实体，修正标签维度顺序
-                labels = labels.cpu().numpy()  # 确保标签在CPU上处理
+                # Process ground-truth entities, fix the label dimension order
+                labels = labels.cpu().numpy()  # Ensure labels are processed on CPU
                 for i in range(batch_size):
                     true_tmp = defaultdict(list)
                     logit = labels[i]  # shape: (seq_len, num_tags)
@@ -275,7 +275,7 @@ class BertForNer:
         true_entities = []
         with torch.no_grad():
             for eval_step, dev_batch_data in enumerate(dev_loader):
-                # 将每个张量转移到设备，修正原代码中的错误
+                # Move each tensor to the device, fix the bug in the original code
                 dev_batch_data = [tensor.to(device) for tensor in dev_batch_data]
                 labels = dev_batch_data[3]
 
@@ -284,34 +284,34 @@ class BertForNer:
                 batch_size = logits.size(0)
                 dev_callbak = dev_callback[eval_step * batch_size:(eval_step + 1) * batch_size]
 
-                # 处理预测实体
+                # Process predicted entities
                 for i in range(batch_size):
                     pred_tmp = defaultdict(list)
                     logit = logits[i]  # shape: (seq_len, num_tags)
                     tokens = dev_callbak[i]
                     for j in range(self.args.num_tags):
-                        logit_ = logit[:, j]  # 确保logit_是一维
-                        ids = np.where(logit_.cpu().numpy() > 0.5)[0].tolist()  # 修正np.where的使用
+                        logit_ = logit[:, j]  # Ensure logit_ is 1-D
+                        ids = np.where(logit_.cpu().numpy() > 0.5)[0].tolist()  # Fix the usage of np.where
                         for d in ids:
                             start, end = map_k2ij[d]
                             pred_tmp[id2tag[j]].append(["".join(tokens[start:end + 1]), start])
                     pred_entities.append(pred_tmp)
 
-                # 处理真实实体，修正标签维度顺序
-                labels = labels.cpu().numpy()  # 确保标签在CPU上处理
+                # Process ground-truth entities, fix the label dimension order
+                labels = labels.cpu().numpy()  # Ensure labels are processed on CPU
                 for i in range(batch_size):
                     true_tmp = defaultdict(list)
                     logit = labels[i]  # shape: (seq_len, num_tags)
                     tokens = dev_callbak[i]
                     for j in range(self.args.num_tags):
-                        logit_ = logit[:, j]  # 确保处理正确的维度
+                        logit_ = logit[:, j]  # Ensure the correct dimension is processed
                         ids = np.where(logit_ == 1)[0].tolist()
                         for d in ids:
                             start, end = map_k2ij[d]
                             true_tmp[id2tag[j]].append(["".join(tokens[start:end + 1]), start])
                     true_entities.append(true_tmp)
 
-            # 统计计算部分保持不变
+            # The statistics and computation part remains unchanged
             total_count = [0 for _ in range(len(id2tag))]
             role_metric = np.zeros([len(id2tag), 3])
             for pred, true in zip(pred_entities, true_entities):
